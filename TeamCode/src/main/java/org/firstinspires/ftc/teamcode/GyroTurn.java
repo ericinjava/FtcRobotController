@@ -45,8 +45,8 @@ public class GyroTurn extends LinearOpMode {
         mrGyro = (ModernRoboticsI2cGyro) sensorGyro;
 
         //position Variables
-        int zAccumulated;
-        int target = 0;
+        int currentHeading;
+        int targetHeading = 0;
 
         //sleep, calibrate, wait for start
         sleep(1000);
@@ -54,17 +54,17 @@ public class GyroTurn extends LinearOpMode {
         waitForStart();
 
         while (mrGyro.isCalibrating()) {
-            zAccumulated = mrGyro.getIntegratedZValue();
+            currentHeading = mrGyro.getIntegratedZValue();
 
-            while (Math.abs(zAccumulated) > 3) {
-                if (zAccumulated > 0){
+            while (Math.abs(currentHeading - targetHeading) > 3) {
+                if (currentHeading > 0){
                     //turn Left
                     leftFront.setPower(-turnSpeed);
                     rightFront.setPower(turnSpeed);
                     leftBack.setPower(-turnSpeed);
                     rightBack.setPower(turnSpeed);
                 }
-                if (zAccumulated < 0){
+                if (currentHeading < 0){
                     //turnRight
                     leftFront.setPower(turnSpeed);
                     rightFront.setPower(-turnSpeed);
@@ -72,10 +72,10 @@ public class GyroTurn extends LinearOpMode {
                     rightBack.setPower(-turnSpeed);
                 }
 
-                zAccumulated = mrGyro.getIntegratedZValue();
+                currentHeading = mrGyro.getIntegratedZValue();
 
                 //telemetry update
-                telemetry.addData("1. accu", String.format("803d", zAccumulated));
+                telemetry.addData("1. accu", String.format("803d", currentHeading));
             }
 
             //set Power to 0
@@ -85,7 +85,7 @@ public class GyroTurn extends LinearOpMode {
             rightBack.setPower(0);
 
             //telemetry update and sleep
-            telemetry.addData("1. accu", String.format("803d", zAccumulated));
+            telemetry.addData("1. accu", String.format("803d", currentHeading));
             sleep(25);
         }
     }
