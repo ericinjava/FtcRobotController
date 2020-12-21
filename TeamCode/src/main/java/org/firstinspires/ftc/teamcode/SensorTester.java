@@ -2,10 +2,10 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cGyro;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.GyroSensor;
+import com.qualcomm.robotcore.util.Range;
 
 public class SensorTester extends LinearOpMode {
 
@@ -59,6 +59,38 @@ public class SensorTester extends LinearOpMode {
         }
     }
 
+    public void driveStraight(int duration, double power){
+        double leftSpeed;
+        double rightSpeed;
+
+        double target = mrGyro.getIntegratedZValue();
+        double startPosition =  leftFront.getCurrentPosition();
+
+        while (leftFront.getCurrentPosition() < duration + startPosition) {
+            int currentHeading = mrGyro.getIntegratedZValue();
+
+            leftSpeed = power + (currentHeading - target)/100;
+            rightSpeed = power - (currentHeading - target)/100;
+
+            leftSpeed = Range.clip(leftSpeed, -1, 1);
+            rightSpeed = Range.clip(rightSpeed, -1, 1);
+
+            leftFront.setPower(leftSpeed);
+            rightFront.setPower(rightSpeed);
+            leftBack.setPower(leftSpeed);
+            rightBack.setPower(rightSpeed);
+
+            telemetry.addData("1. Left Front", leftFront.getPower());
+            telemetry.addData("2. Right Front", rightFront.getPower());
+            telemetry.addData("3. Left Back", leftBack.getPower());
+            telemetry.addData("4. Right Back", rightBack.getPower());
+            telemetry.addData("5. Distance to go", duration + startPosition - leftFront.getCurrentPosition());
+        }
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+    }
     public void turnTo(int targetHeading) throws InterruptedException{
 
 
