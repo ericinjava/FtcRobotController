@@ -165,6 +165,34 @@ public class FourRings extends LinearOpMode {
 
         strafeRightUntil(5);
         senseLineFollowWall("white");
+
+
+        /*
+        //0 rings
+        senseLine("white", 0.35);
+        strafeRightUntil(30);
+
+        turn(0.35, 120);
+        moveInches(-2);
+        wobbleDrop();
+        moveInches(2);
+        turn(-0.35, 120);
+        */
+
+        /*
+        1 ring
+        senseLine("white", 0.35);
+        strafeRightUntil(30);
+        senseLine("red", 0.35);
+        senseLine("red", 0.35);
+
+        moveInches(8);
+        wobbleDrop();
+        moveInches(2);
+
+        strafeRightUntil(5);
+        senseLineFollowWall("white");
+         */
     }
 
     void strafeRightUntil(double centimetersFromWall) {
@@ -214,7 +242,7 @@ public class FourRings extends LinearOpMode {
         int countWhite = 0;
 
         //If the "foundRed" Boolean is False, Run Loop
-        while (!foundRed && opModeIsActive()) {
+        while ((!foundRed || !foundWhite) && opModeIsActive()) {
             //Needed (updating) Variables
             NormalizedRGBA colors = colorSensor.getNormalizedColors();
             double heading = Double.parseDouble(formatAngle(angles.angleUnit, angles.firstAngle));
