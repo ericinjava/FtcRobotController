@@ -361,6 +361,13 @@ public class FourRings extends LinearOpMode {
                 rf.setPower(-(distanceReading/4) + 1.50);
                 lb.setPower((distanceReading/4) - 1.00);
                 rb.setPower((-distanceReading/4) + 1.50);
+
+                /*
+                lf.setPower((speed * distanceReading) - (speed * (centimetersFromWall - 1.0));
+                rf.setPower((-speed * distanceReading) + (speed * (centimetersFromWall + 1.0));
+                lb.setPower((speed * distanceReading) - (speed * (centimetersFromWall - 1.0));
+                rb.setPower((-speed * distanceReading) + (speed * (centimetersFromWall + 1.0));
+                 */
             }
         } else if (color == "red") {
             while (opModeIsActive() && !foundRed) {
