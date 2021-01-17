@@ -1,0 +1,250 @@
+<html>
+<head>
+<title>Multithreading.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000000;}
+.s1 { color: #808080; font-style: italic;}
+.s2 { color: #000080; font-weight: bold;}
+.s3 { color: #008000; font-weight: bold;}
+.s4 { color: #0000ff;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Multithreading.java</font>
+</center></td></tr></table>
+<pre>{
+    <span class="s1">// The IMU sensor object</span>
+    BNO055IMU imu;
+    NormalizedColorSensor colorSensor;
+
+    <span class="s1">// State used for updating telemetry</span>
+    Orientation angles;
+    Acceleration gravity;
+
+    <span class="s1">//set Motors</span>
+    DcMotor leftFront;
+    DcMotor rightFront;
+    DcMotor leftBack;
+    DcMotor rightBack;
+
+    <span class="s2">public </span>Multithreading() <span class="s2">throws </span>Exception {
+        telemetry.addData(<span class="s3">&quot;Starting:&quot;</span>, <span class="s3">&quot;New Thread&quot;</span>);
+    }
+
+    <span class="s1">// called when init button is  pressed.</span>
+    @Override
+    <span class="s2">public void </span>runOpMode() <span class="s2">throws </span>InterruptedException {
+
+        BNO055IMU.Parameters parameters = <span class="s2">new </span>BNO055IMU.Parameters();
+        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.calibrationDataFile = <span class="s3">&quot;BNO055IMUCalibration.json&quot;</span>; <span class="s1">// see the calibration sample opmode</span>
+        parameters.loggingEnabled = <span class="s2">true</span>;
+        parameters.loggingTag = <span class="s3">&quot;IMU&quot;</span>;
+        parameters.accelerationIntegrationAlgorithm = <span class="s2">new </span>JustLoggingAccelerationIntegrator();
+
+        <span class="s1">//hardware Mapping Motors</span>
+        leftFront = hardwareMap.dcMotor.get(<span class="s3">&quot;leftFront&quot;</span>);
+        rightFront = hardwareMap.dcMotor.get(<span class="s3">&quot;rightFront&quot;</span>);
+        leftBack = hardwareMap.dcMotor.get(<span class="s3">&quot;leftBack&quot;</span>);
+        rightBack = hardwareMap.dcMotor.get(<span class="s3">&quot;rightBack&quot;</span>);
+
+        <span class="s1">//reversing Motors</span>
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+
+
+        imu = hardwareMap.get(BNO055IMU.<span class="s2">class</span>, <span class="s3">&quot;imu&quot;</span>);
+        imu.initialize(parameters);
+
+
+        <span class="s2">final float</span>[] hsvValues = <span class="s2">new float</span>[<span class="s4">3</span>];
+        colorSensor = hardwareMap.get(NormalizedColorSensor.<span class="s2">class</span>, <span class="s3">&quot;sensorColor&quot;</span>);
+        <span class="s2">if </span>(colorSensor <span class="s2">instanceof </span>SwitchableLight) {
+            ((SwitchableLight) colorSensor).enableLight(<span class="s2">true</span>);
+        }
+
+        <span class="s1">// create an instance of the DriveThread.</span>
+
+        Thread driveThread = <span class="s2">new </span>DriveThread();
+
+        telemetry.addData(<span class="s3">&quot;Mode&quot;</span>, <span class="s3">&quot;waiting&quot;</span>);
+        telemetry.update();
+
+        <span class="s1">// wait for start button.</span>
+
+        telemetry.addData(<span class="s3">&quot;wait for start&quot;</span>, <span class="s3">&quot;&quot;</span>);
+
+        waitForStart();
+
+
+        <span class="s1">// Start the logging of measured acceleration</span>
+        imu.startAccelerationIntegration(<span class="s2">new </span>Position(), <span class="s2">new </span>Velocity(), <span class="s4">1000</span>);
+
+        telemetry.addData(<span class="s3">&quot;started&quot;</span>, <span class="s3">&quot;&quot;</span>);
+
+        <span class="s1">// start the driving thread.</span>
+        <span class="s1">//Starts using Gyro</span>
+        driveThread.start();
+
+        <span class="s1">// continue with main thread.</span>
+        <span class="s1">//main thread runs color sensor</span>
+        <span class="s2">try </span>{
+            <span class="s2">while </span>(opModeIsActive()) {
+                telemetry.addData(<span class="s3">&quot;Mode&quot;</span>, <span class="s3">&quot;running&quot;</span>);
+                telemetry.addData(<span class="s3">&quot;Run Time&quot;</span>, <span class="s2">this</span>.getRuntime());
+                telemetry.update();
+
+                <span class="s2">boolean </span>sensedWhite = <span class="s2">false</span>;
+                <span class="s2">boolean </span>sensedRed = <span class="s2">false</span>;
+                <span class="s2">while </span>(!sensedWhite &amp;&amp; opModeIsActive()) {
+                    NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
+                    <span class="s1">//Color.colorToHSV(colors.toColor(), hsvValues);</span>
+
+
+                    telemetry.addLine()
+                            .addData(<span class="s3">&quot;Red&quot;</span>, <span class="s3">&quot;%.3f&quot;</span>, colors.red * <span class="s4">100</span>)
+                            .addData(<span class="s3">&quot;Green&quot;</span>, <span class="s3">&quot;%.3f&quot;</span>, colors.green * <span class="s4">100</span>)
+                            .addData(<span class="s3">&quot;Blue&quot;</span>, <span class="s3">&quot;%.3f&quot;</span>, colors.blue * <span class="s4">100</span>);
+                    telemetry.addLine();
+                    telemetry.addData(<span class="s3">&quot;Alpha&quot;</span>, <span class="s3">&quot;%.3f&quot;</span>, colors.alpha);
+
+
+                    telemetry.update();
+
+
+                    leftFront.setPower(<span class="s4">0.25</span>);
+                    rightFront.setPower(<span class="s4">0.25</span>);
+                    leftBack.setPower(<span class="s4">0.25</span>);
+                    rightBack.setPower(<span class="s4">0.25</span>);
+
+                    <span class="s2">if </span>(colors.alpha &gt; <span class="s4">0.3</span>) {
+                        sensedWhite = <span class="s2">true</span>;
+                        leftFront.setPower(<span class="s4">0</span>);
+                        rightFront.setPower(<span class="s4">0</span>);
+                        leftBack.setPower(<span class="s4">0</span>);
+                        rightBack.setPower(<span class="s4">0</span>);
+                        sleep(<span class="s4">1000</span>);
+                    }
+
+                }
+                <span class="s2">for </span>(<span class="s2">int </span>i = <span class="s4">0</span>; i &lt; <span class="s4">2</span>; i++) {
+                    <span class="s2">while </span>(!sensedRed &amp;&amp; opModeIsActive()) {
+                        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
+                        <span class="s1">//Color.colorToHSV(colors.toColor(), hsvValues);</span>
+
+
+                        telemetry.addLine()
+                                .addData(<span class="s3">&quot;Red&quot;</span>, <span class="s3">&quot;%.3f&quot;</span>, colors.red * <span class="s4">100</span>)
+                                .addData(<span class="s3">&quot;Green&quot;</span>, <span class="s3">&quot;%.3f&quot;</span>, colors.green * <span class="s4">100</span>)
+                                .addData(<span class="s3">&quot;Blue&quot;</span>, <span class="s3">&quot;%.3f&quot;</span>, colors.blue * <span class="s4">100</span>);
+                        telemetry.addLine();
+                        telemetry.addData(<span class="s3">&quot;Alpha&quot;</span>, <span class="s3">&quot;%.3f&quot;</span>, colors.alpha);
+
+
+                        telemetry.update();
+
+
+                        leftFront.setPower(<span class="s4">0.25</span>);
+                        rightFront.setPower(<span class="s4">0.25</span>);
+                        leftBack.setPower(<span class="s4">0.25</span>);
+                        rightBack.setPower(<span class="s4">0.25</span>);
+
+                        <span class="s2">if </span>(colors.alpha &lt; <span class="s4">0.1</span>) {
+                            sensedRed = <span class="s2">true</span>;
+                            leftFront.setPower(<span class="s4">0</span>);
+                            rightFront.setPower(<span class="s4">0</span>);
+                            leftBack.setPower(<span class="s4">0</span>);
+                            rightBack.setPower(<span class="s4">0</span>);
+                            sleep(<span class="s4">1000</span>);
+                        }
+                    }
+                    sensedRed = <span class="s2">false</span>;
+                }
+            }
+
+            idle();
+
+        } <span class="s2">catch </span>(Exception e) {
+            telemetry.addData(e.getMessage(), <span class="s3">&quot;&quot;</span>);
+        }
+
+        telemetry.addData(<span class="s3">&quot;out of while loop&quot;</span>, <span class="s3">&quot;&quot;</span>);
+
+        <span class="s1">// stop the driving thread.</span>
+
+        driveThread.interrupt();
+
+        telemetry.addData(<span class="s3">&quot;end&quot;</span>, <span class="s3">&quot;&quot;</span>);
+    }
+
+    <span class="s2">private class </span>DriveThread <span class="s2">extends </span>Thread {
+        <span class="s2">public </span>DriveThread() {
+            <span class="s2">this</span>.setName(<span class="s3">&quot;DriveThread&quot;</span>);
+
+            telemetry.addData(<span class="s3">&quot;%s&quot;</span>, <span class="s2">this</span>.getName());
+        }
+
+        <span class="s1">// called when tread.start is called. thread stays in loop to do what it does until exit is</span>
+        <span class="s1">// signaled by main code calling thread.interrupt.</span>
+        @Override
+        <span class="s2">public void </span>run() {
+            telemetry.addData(<span class="s3">&quot;Starting thread %s&quot;</span>, <span class="s2">this</span>.getName());
+
+            <span class="s2">try </span>{
+                <span class="s2">while </span>(!isInterrupted()) {
+                    <span class="s1">// we record the Y values in the main class to make showing them in telemetry</span>
+                    <span class="s1">// easier.</span>
+                    leftFront.setPower(<span class="s4">1</span>);
+                    angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+
+                    <span class="s2">double </span>heading = Double.parseDouble(formatAngle(angles.angleUnit, angles.firstAngle));
+                    <span class="s2">double </span>speed = <span class="s4">0.35</span>; <span class="s1">//Values betwen 0.25 and 0.5 work best</span>
+                    <span class="s2">double </span>proportionalTerm = <span class="s4">0.025</span>; <span class="s1">// Do not use any value above 0.025</span>
+
+                    <span class="s2">if </span>(heading &lt; -<span class="s4">0.1 </span>&amp;&amp; heading &gt; -<span class="s4">90</span>) {
+                        leftFront.setPower(speed - (proportionalTerm * heading));
+                        leftBack.setPower(speed - (proportionalTerm * heading));
+                        rightFront.setPower(speed + (proportionalTerm * heading));
+                        rightBack.setPower(speed + (proportionalTerm * heading));
+                    } <span class="s2">else if </span>(heading &gt; <span class="s4">0.1 </span>&amp;&amp; heading &lt; <span class="s4">90</span>) {
+                        leftFront.setPower(speed + (proportionalTerm * heading));
+                        leftBack.setPower(speed + (proportionalTerm * heading));
+                        rightFront.setPower(speed - (proportionalTerm * heading));
+                        rightBack.setPower(speed - (proportionalTerm * heading));
+                    } <span class="s2">else </span>{
+                        leftFront.setPower(speed);
+                        leftBack.setPower(speed);
+                        rightFront.setPower(speed);
+                        rightBack.setPower(speed);
+
+                    }
+                    telemetry.update();
+
+                    idle();
+                }
+            } <span class="s2">catch </span>(Exception e) {
+                telemetry.addData(<span class="s3">&quot;u&quot;</span>, <span class="s3">&quot;bad&quot;</span>);
+            }
+
+            telemetry.addData(<span class="s3">&quot;end of thread %s&quot;</span>, <span class="s2">this</span>.getName());
+        }
+
+
+        String formatAngle(AngleUnit angleUnit, <span class="s2">double </span>angle) {
+            <span class="s2">return </span>formatDegrees(AngleUnit.DEGREES.fromUnit(angleUnit, angle));
+        }
+
+        String formatDegrees(<span class="s2">double </span>degrees) {
+            <span class="s2">return </span>String.format(Locale.getDefault(), <span class="s3">&quot;%.1f&quot;</span>, AngleUnit.DEGREES.normalize(degrees));
+        }
+    }
+}</pre>
+</body>
+</html>
