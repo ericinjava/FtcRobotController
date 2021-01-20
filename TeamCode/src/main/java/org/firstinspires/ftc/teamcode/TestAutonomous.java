@@ -4,8 +4,8 @@ import java.util.List;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import java.util.Locale;
 import java.util.Stack;
-import android.view.View;
-import android.graphics.Color;
+//import android.view.View;
+//import android.graphics.Color;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -277,11 +277,11 @@ public class TestAutonomous extends LinearOpMode {
 
     //Tfod Method
     private void initTfod() {
-        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-        tfodParameters.minResultConfidence = 0.8f;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        //int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+        //        "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        //TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        //tfodParameters.minResultConfidence = 0.8f;
+        //tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 
@@ -340,7 +340,7 @@ public class TestAutonomous extends LinearOpMode {
         while (!foundWhite && opModeIsActive()) {
             //Needed (updating) Variables
             NormalizedRGBA colors = colorSensor.getNormalizedColors();
-            Color.colorToHSV(colors.toColor(), hsvValues);
+            //Color.colorToHSV(colors.toColor(), hsvValues);
             double heading = Double.parseDouble(formatAngle(angles.angleUnit, angles.firstAngle));
             int countWhite = 0;
 

@@ -150,7 +150,7 @@ public class FourRings extends LinearOpMode {
         //Waiting for start via Player
         waitForStart();
 
-        senseLine("white", 0.35);
+        senseLine("white", 0.25);
         strafeRightUntil(30);
         senseLine("red", 0.35);
         senseLine("red", 0.35);
@@ -165,7 +165,6 @@ public class FourRings extends LinearOpMode {
 
         strafeRightUntil(5);
         senseLineFollowWall("white");
-
 
         /*
         //0 rings
@@ -212,7 +211,7 @@ public class FourRings extends LinearOpMode {
 
                 if (heading < -0.1 && heading > -90) {
                     lf.setPower((speed - (proportionalTerm * heading)));
-                    lb.setPower(-(speed + (proportionalTerm * heading)));
+                    lb.setPower(-(speed - (proportionalTerm * heading)));// changed
                     rf.setPower(-(speed + (proportionalTerm * heading)));
                     rb.setPower((speed + (proportionalTerm * heading)));
                 } else if (heading > 0.1 && heading < 90) {
@@ -238,11 +237,13 @@ public class FourRings extends LinearOpMode {
         //Needed (non-changing) Variables
         final float[] hsvValues = new float[3];
         angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+        foundRed = false;
+        foundWhite = false;
         int countRed = 0;
         int countWhite = 0;
 
         //If the "foundRed" Boolean is False, Run Loop
-        while ((!foundRed || !foundWhite) && opModeIsActive()) {
+        while (!foundRed && !foundWhite && opModeIsActive()) {
             //Needed (updating) Variables
             NormalizedRGBA colors = colorSensor.getNormalizedColors();
             double heading = Double.parseDouble(formatAngle(angles.angleUnit, angles.firstAngle));
@@ -289,17 +290,17 @@ public class FourRings extends LinearOpMode {
             telemetry.addLine()
                     .addData("Alpha Output", "%.3f", colors.alpha)
                     .addData("Heading Output", "%.3f", heading)
-                    .addData("Loop Count", "%,3f", countRed);
+                    .addData("Loop Count", countRed);
             telemetry.update();
 
-            if (color == "red") {
+            if (color.equals("red")) {
                 //If Statement to Detect the Red Line and Break the Loop
                 if (colors.alpha < 0.2) {
                     stopRobot();
                     foundRed = true;
                 }
                 countRed++;
-            } else if (color == "white") {
+            } else if (color.equals("white")) {
                 if (colors.alpha > 0.5) {
                     stopRobot();
                     foundWhite = true;
